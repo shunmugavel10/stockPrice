@@ -6,7 +6,7 @@ import '../../core/utils/extensions.dart';
 import '../../core/utils/platform_adaptive.dart';
 import '../../features/portfolio/presentation/providers/portfolio_providers.dart';
 
-/// Reusable bottom sheet for buying / adding a stock to the portfolio.
+/// Reusable bottom sheet for buying a stock to the portfolio.
 void showBuyStockSheet(
   BuildContext context, {
   required WidgetRef ref,
