@@ -193,6 +193,57 @@ class MarketstackService {
     }
   }
 
+  /// Fetches historical EOD prices for a symbol within a date range
+  Future<ApiResult<List<Map<String, dynamic>>>> fetchHistoricalPrices({
+    required String symbol,
+    required String dateFrom,
+    required String dateTo,
+    int limit = 365,
+  }) async {
+    final key = symbol.toUpperCase();
+    final cacheKey = 'history_${key}_${dateFrom}_$dateTo';
+
+    // Check persistent cache first
+    final cached = ApiCacheService.get<List<dynamic>>(cacheKey);
+    if (cached != null) {
+      return ApiSuccess(cached.cast<Map<String, dynamic>>());
+    }
+
+    try {
+      final response = await _dio.get(
+        '/eod',
+        queryParameters: {
+          'access_key': AppConstants.marketstackApiKey,
+          'symbols': key,
+          'date_from': dateFrom,
+          'date_to': dateTo,
+          'limit': limit,
+          'sort': 'ASC',
+        },
+      );
+
+      final data = response.data;
+
+      if (data is Map<String, dynamic> && data.containsKey('error')) {
+        final error = data['error'];
+        return ApiError('API error: ${error['message'] ?? 'Unknown error'}');
+      }
+
+      final eodList = (data['data'] as List<dynamic>?)
+              ?.cast<Map<String, dynamic>>() ??
+          [];
+
+      // Persist with 1 hour TTL
+      await ApiCacheService.put(cacheKey, eodList, ttl: const Duration(hours: 1));
+
+      return ApiSuccess(eodList);
+    } on DioException catch (e) {
+      return ApiError('Network error: ${e.message}');
+    } catch (e) {
+      return ApiError('Unexpected error: $e');
+    }
+  }
+
   /// Clears both in-memory and persistent caches
   Future<void> clearCache() async {
     _quoteCache.clear();

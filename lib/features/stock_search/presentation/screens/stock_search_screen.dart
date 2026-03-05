@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/extensions.dart';
 import '../../../../core/utils/platform_adaptive.dart';
@@ -8,7 +9,7 @@ import '../../../../core/utils/responsive.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/error_screen.dart';
 import '../../../../shared/widgets/shimmer_loading.dart';
-import '../../../portfolio/presentation/providers/portfolio_providers.dart';
+import '../../../../shared/widgets/buy_stock_sheet.dart';
 import '../../domain/models/symbol_search_result.dart';
 import '../providers/search_providers.dart';
 
@@ -21,8 +22,6 @@ class StockSearchScreen extends ConsumerStatefulWidget {
 
 class _StockSearchScreenState extends ConsumerState<StockSearchScreen> {
   final _searchController = TextEditingController();
-  final _quantityController = TextEditingController();
-  final _priceController = TextEditingController();
   final _scrollController = ScrollController();
   bool _initialFetched = false;
 
@@ -36,8 +35,6 @@ class _StockSearchScreenState extends ConsumerState<StockSearchScreen> {
   void dispose() {
     _scrollController.dispose();
     _searchController.dispose();
-    _quantityController.dispose();
-    _priceController.dispose();
     super.dispose();
   }
 
@@ -477,16 +474,22 @@ class _StockSearchScreenState extends ConsumerState<StockSearchScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(
-              isCupertino
-                  ? CupertinoIcons.add_circled
-                  : Icons.add_circle_outline_rounded,
-              color: AppColors.primary,
-              size: 22,
+            GestureDetector(
+              onTap: () => _showAddDialog(context, symbol, name),
+              child: Icon(
+                isCupertino
+                    ? CupertinoIcons.add_circled
+                    : Icons.add_circle_outline_rounded,
+                color: AppColors.primary,
+                size: 22,
+              ),
             ),
           ],
         ),
-        onTap: () => _showAddDialog(context, symbol, name),
+        onTap: () => context.push('/stock-detail', extra: {
+          'symbol': symbol,
+          'name': name,
+        }),
       ),
     );
   }
@@ -533,140 +536,35 @@ class _StockSearchScreenState extends ConsumerState<StockSearchScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(
-              isCupertino
-                  ? CupertinoIcons.add_circled
-                  : Icons.add_circle_outline_rounded,
-              color: AppColors.primary,
+            GestureDetector(
+              onTap: () => _showAddDialog(
+                context,
+                result.symbol,
+                result.name,
+              ),
+              child: Icon(
+                isCupertino
+                    ? CupertinoIcons.add_circled
+                    : Icons.add_circle_outline_rounded,
+                color: AppColors.primary,
+              ),
             ),
           ],
         ),
-        onTap: () => _showAddDialog(
-          context,
-          result.symbol,
-          result.name,
-        ),
+        onTap: () => context.push('/stock-detail', extra: {
+          'symbol': result.symbol,
+          'name': result.name,
+        }),
       ),
     );
   }
 
   void _showAddDialog(BuildContext context, String symbol, String name) {
-    _quantityController.clear();
-    _priceController.clear();
-
-    showAdaptiveBottomSheet(
-      context: context,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          24,
-          24,
-          24,
-          24 + MediaQuery.of(ctx).viewInsets.bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                  child: Text(
-                    symbol.substring(0, symbol.length > 2 ? 2 : symbol.length),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(symbol,
-                          style: context.textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700)),
-                      Text(name,
-                          style: context.textTheme.bodySmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            AdaptiveTextField(
-              controller: _quantityController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              labelText: 'Quantity (shares)',
-              prefix: Icon(
-                isCupertino ? CupertinoIcons.number : Icons.numbers_rounded,
-                size: 20,
-              ),
-            ),
-            const SizedBox(height: 12),
-            AdaptiveTextField(
-              controller: _priceController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              labelText: 'Buy Price (\$)',
-              prefix: Icon(
-                isCupertino
-                    ? CupertinoIcons.money_dollar
-                    : Icons.attach_money_rounded,
-                size: 20,
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: AdaptiveButton(
-                onPressed: () => _addStock(context, symbol, name),
-                child: const Text('Add to Portfolio'),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _addStock(BuildContext context, String symbol, String name) {
-    final quantity = double.tryParse(_quantityController.text);
-    final price = double.tryParse(_priceController.text);
-
-    if (quantity == null || quantity <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid quantity.')),
-      );
-      return;
-    }
-    if (price == null || price <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid buy price.')),
-      );
-      return;
-    }
-
-    ref.read(holdingsProvider.notifier).addHolding(
-          symbol: symbol,
-          name: name,
-          quantity: quantity,
-          buyPrice: price,
-        );
-
-    Navigator.of(context).pop();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$symbol added to portfolio!'),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
+    showBuyStockSheet(
+      context,
+      ref: ref,
+      symbol: symbol,
+      name: name,
     );
   }
 }

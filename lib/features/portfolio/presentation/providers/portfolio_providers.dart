@@ -113,6 +113,39 @@ final historicalCO2Provider =
 
 
 
+/// Fetches historical EOD prices for a symbol with a given period key
+
+final historicalPricesProvider =
+    FutureProvider.family<List<Map<String, dynamic>>, String>((ref, key) async {
+  final parts = key.split('_');
+  if (parts.length < 2) throw Exception('Invalid key format');
+  final symbol = parts.sublist(0, parts.length - 1).join('_');
+  final days = int.tryParse(parts.last) ?? 30;
+
+  final service = ref.read(marketstackServiceProvider);
+  final now = DateTime.now();
+  final from = now.subtract(Duration(days: days));
+
+  final dateFrom =
+      '${from.year}-${from.month.toString().padLeft(2, '0')}-${from.day.toString().padLeft(2, '0')}';
+  final dateTo =
+      '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+  final result = await service.fetchHistoricalPrices(
+    symbol: symbol,
+    dateFrom: dateFrom,
+    dateTo: dateTo,
+    limit: days + 10,
+  );
+
+  switch (result) {
+    case ApiSuccess(data: final data):
+      return data;
+    case ApiError(message: final msg):
+      throw Exception(msg);
+  }
+});
+
 /// portfolio summary combining holdings and ESG data
 final portfolioSummaryProvider = FutureProvider<PortfolioSummary>((ref) async {
   final holdings = ref.watch(holdingsProvider);
