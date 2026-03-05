@@ -15,14 +15,13 @@ import '../../domain/repositories/esg_repository.dart';
 import '../../domain/repositories/portfolio_local_repository.dart';
 import '../../domain/repositories/stock_repository.dart';
 
-// ─── Service Providers ───────────────────────────────────────────
-
-final alphaVantageServiceProvider = Provider<AlphaVantageService>((ref) {
-  return AlphaVantageService(DioClient.instance);
+// Service Providers
+final marketstackServiceProvider = Provider<MarketstackService>((ref) {
+  return MarketstackService(DioClient.instance);
 });
 
 final stockRepositoryProvider = Provider<StockRepository>((ref) {
-  return StockRepositoryImpl(ref.read(alphaVantageServiceProvider));
+  return StockRepositoryImpl(ref.read(marketstackServiceProvider));
 });
 
 final esgRepositoryProvider = Provider<EsgRepository>((ref) {
@@ -37,7 +36,7 @@ final portfolioLocalRepositoryProvider = Provider<PortfolioLocalRepository>((ref
   return PortfolioLocalRepositoryImpl(ref.read(portfolioBoxProvider));
 });
 
-// ─── Portfolio State ─────────────────────────────────────────────
+// Portfolio State 
 
 /// Holds the list of portfolio holdings from Hive
 final holdingsProvider =
@@ -84,7 +83,6 @@ class HoldingsNotifier extends StateNotifier<List<StockHolding>> {
   }
 }
 
-// ─── Quote Providers ─────────────────────────────────────────────
 
 /// Fetches a real-time quote for a single symbol
 final stockQuoteProvider =
@@ -113,9 +111,9 @@ final historicalCO2Provider =
   return repo.getHistoricalCO2(symbol);
 });
 
-// ─── Dashboard / Portfolio Summary ───────────────────────────────
 
-/// Enriched portfolio summary combining holdings, quotes, and ESG data
+
+/// portfolio summary combining holdings and ESG data
 final portfolioSummaryProvider = FutureProvider<PortfolioSummary>((ref) async {
   final holdings = ref.watch(holdingsProvider);
 
@@ -156,11 +154,8 @@ final portfolioSummaryProvider = FutureProvider<PortfolioSummary>((ref) async {
         quote: quote,
         esg: esg,
       ));
-
-      // Rate limit delay between API calls
       await Future.delayed(const Duration(milliseconds: 1200));
     } catch (_) {
-      // Skip holdings that fail to load
     }
   }
 

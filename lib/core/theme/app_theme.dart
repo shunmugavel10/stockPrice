@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
 
-/// Professional fintech theme configuration for GreenInvest
+/// theme configuration
 class AppTheme {
   AppTheme._();
 
-  // ─── Light Theme ───────────────────────────────────────────────
+  // Light Theme
   static ThemeData get light => ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
@@ -81,7 +81,7 @@ class AppTheme {
         ],
       );
 
-  // ─── Dark Theme ────────────────────────────────────────────────
+  // Dark Theme
   static ThemeData get dark => ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
@@ -164,7 +164,7 @@ class AppTheme {
   }
 }
 
-/// Custom theme extension for glassmorphism and gradient cards
+/// theme for glassmorphism and gradient cards
 @immutable
 class GreenInvestThemeExtension extends ThemeExtension<GreenInvestThemeExtension> {
   final Color glassmorphismColor;

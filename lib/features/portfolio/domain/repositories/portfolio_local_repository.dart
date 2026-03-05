@@ -1,6 +1,6 @@
 import '../models/stock_holding.dart';
 
-/// Abstract repository for local portfolio persistence
+// Abstract repository for local portfolio
 abstract class PortfolioLocalRepository {
   List<StockHolding> getAll();
   Future<void> add(StockHolding holding);

@@ -1,4 +1,4 @@
-/// Generic wrapper for API call results
+/// API call results integration
 sealed class ApiResult<T> {
   const ApiResult();
 }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-/// Centralized color palette for GreenInvest
+
 class AppColors {
   AppColors._();
 
-  // Primary eco-green accent
+  // Primary color
   static const Color primary = Color(0xFF1DB954);
   static const Color primaryLight = Color(0xFF4ECB71);
   static const Color primaryDark = Color(0xFF148F3F);

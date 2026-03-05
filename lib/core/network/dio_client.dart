@@ -1,9 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import '../constants/app_constants.dart';
 
-/// Configures and provides a singleton Dio instance for API calls
+/// Configures and provides a Dio instance for API calls
 class DioClient {
   DioClient._();
 
@@ -17,7 +16,7 @@ class DioClient {
   static Dio _createDio() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: dotenv.env['BASE_URL'] ?? 'https://www.alphavantage.co',
+        baseUrl: AppConstants.marketstackBaseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
         headers: {
@@ -27,7 +26,6 @@ class DioClient {
       ),
     );
 
-    // Logging
     dio.interceptors.add(
       PrettyDioLogger(
         requestHeader: false,

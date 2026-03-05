@@ -32,7 +32,7 @@ class ShellScaffold extends StatelessWidget {
     final index = _currentIndex(context);
     final isTabletOrDesktop = !Responsive.isMobile(context);
 
-    // Tablet/desktop: side navigation rail + expanded content
+    // Tablet/desktop side navigation 
     if (isTabletOrDesktop) {
       return Scaffold(
         body: SafeArea(

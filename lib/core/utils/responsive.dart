@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-/// Device type breakpoints for responsive layouts
+/// Device type for responsive layouts
 enum DeviceType { mobile, tablet, desktop }
 
 /// Responsive utility providing breakpoints and adaptive sizing

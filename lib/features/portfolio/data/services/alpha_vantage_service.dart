@@ -1,54 +1,103 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/network/api_cache_service.dart';
 import '../../../../core/network/api_result.dart';
 import '../../domain/models/stock_quote.dart';
 
-/// Service for Alpha Vantage API calls
-class AlphaVantageService {
+/// Cached entry for API responses
+class _CacheEntry<T> {
+  final T data;
+  final DateTime timestamp;
+
+  _CacheEntry(this.data) : timestamp = DateTime.now();
+
+  bool get isExpired =>
+      DateTime.now().difference(timestamp).inSeconds >
+      AppConstants.cacheDurationSeconds;
+}
+
+/// Service for Marketstack API calls with 60-second caching
+class MarketstackService {
   final Dio _dio;
+  final Map<String, _CacheEntry<StockQuote>> _quoteCache = {};
 
-  AlphaVantageService(this._dio);
+  MarketstackService(this._dio);
 
-  String get _apiKey => dotenv.env['ALPHA_VANTAGE_API_KEY'] ?? '';
+  /// Fetches the latest EOD price for a given stock symbol
+  Future<ApiResult<StockQuote>> fetchStockPrice(String symbol) async {
+    final key = symbol.toUpperCase();
+    final cacheKey = 'quote_$key';
 
-  /// Fetches real-time quote for a given stock symbol
-  Future<ApiResult<StockQuote>> getGlobalQuote(String symbol) async {
+    // L1: in-memory cache
+    if (_quoteCache.containsKey(key) && !_quoteCache[key]!.isExpired) {
+      return ApiSuccess(_quoteCache[key]!.data);
+    }
+
+    // L2: persistent Hive cache
+    final cached = ApiCacheService.get<Map<String, dynamic>>(cacheKey);
+    if (cached != null) {
+      final quote = StockQuote.fromMarketstack(cached);
+      _quoteCache[key] = _CacheEntry(quote);
+      return ApiSuccess(quote);
+    }
+
     try {
       final response = await _dio.get(
-        '/query',
+        '/eod',
         queryParameters: {
-          'function': AppConstants.globalQuoteFunction,
-          'symbol': symbol.toUpperCase(),
-          'apikey': _apiKey,
+          'access_key': AppConstants.marketstackApiKey,
+          'symbols': key,
+          'limit': 1,
         },
       );
 
-      final data = response.data as Map<String, dynamic>;
+      final data = response.data;
 
-      // Alpha Vantage returns a "Note" key on rate limit
-      if (data.containsKey('Note')) {
-        return const ApiError('API rate limit reached. Please wait and try again.',
-            statusCode: 429);
+      // Marketstack returns error object on failures
+      if (data is Map<String, dynamic> && data.containsKey('error')) {
+        final error = data['error'];
+        final errorMessage = error['message'] ?? 'Unknown API error';
+        final errorCode = error['code'] ?? '';
+
+        if (errorCode == 'usage_limit_reached' ||
+            errorCode == 'rate_limit_reached') {
+          return const ApiError(
+            'API rate limit exceeded. Please try again later.',
+            statusCode: 429,
+          );
+        }
+        return ApiError('API error: $errorMessage');
       }
 
-      // Alpha Vantage returns "Error Message" for invalid symbols
-      if (data.containsKey('Error Message')) {
-        return ApiError('Invalid symbol: $symbol');
-      }
+      // Parse EOD data
+      final eodList = data['data'] as List<dynamic>?;
 
-      // Check for empty response
-      if (data['Global Quote'] == null ||
-          (data['Global Quote'] as Map).isEmpty) {
+      if (eodList == null || eodList.isEmpty) {
         return ApiError('No data found for symbol: $symbol');
       }
 
-      final quote = StockQuote.fromJson(data);
+      final quote = StockQuote.fromMarketstack(
+        eodList[0] as Map<String, dynamic>,
+      );
+
+      if (quote.isEmpty) {
+        return ApiError('Invalid data for symbol: $symbol');
+      }
+
+      // Cache the result (L1 in-memory + L2 persistent)
+      _quoteCache[key] = _CacheEntry(quote);
+      await ApiCacheService.put(
+        cacheKey,
+        eodList[0] as Map<String, dynamic>,
+        ttl: const Duration(minutes: 5),
+      );
+
       return ApiSuccess(quote);
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
-        return const ApiError('Connection timeout. Please check your network.');
+        return const ApiError(
+            'Connection timeout. Please check your network.');
       }
       return ApiError('Network error: ${e.message}');
     } catch (e) {
@@ -56,35 +105,97 @@ class AlphaVantageService {
     }
   }
 
-  /// Searches for symbols matching keywords
+  /// Searches for tickers matching keywords using Marketstack tickers endpoint
   Future<ApiResult<List<Map<String, dynamic>>>> searchSymbol(
       String keywords) async {
+    final cacheKey = 'search_${keywords.toLowerCase().trim()}';
+
+    // Check persistent cache first
+    final cached = ApiCacheService.get<List<dynamic>>(cacheKey);
+    if (cached != null) {
+      return ApiSuccess(cached.cast<Map<String, dynamic>>());
+    }
+
     try {
       final response = await _dio.get(
-        '/query',
+        '/tickers',
         queryParameters: {
-          'function': AppConstants.symbolSearchFunction,
-          'keywords': keywords,
-          'apikey': _apiKey,
+          'access_key': AppConstants.marketstackApiKey,
+          'search': keywords,
+          'limit': 10,
         },
       );
 
-      final data = response.data as Map<String, dynamic>;
+      final data = response.data;
 
-      if (data.containsKey('Note')) {
-        return const ApiError('API rate limit reached. Please wait and try again.',
-            statusCode: 429);
+      if (data is Map<String, dynamic> && data.containsKey('error')) {
+        final error = data['error'];
+        return ApiError('API error: ${error['message'] ?? 'Unknown error'}');
       }
 
-      final matches = (data['bestMatches'] as List<dynamic>?)
+      final tickers = (data['data'] as List<dynamic>?)
               ?.cast<Map<String, dynamic>>() ??
           [];
 
-      return ApiSuccess(matches);
+      // Persist search results (1 hour TTL)
+      await ApiCacheService.put(cacheKey, tickers, ttl: const Duration(hours: 1));
+
+      return ApiSuccess(tickers);
     } on DioException catch (e) {
       return ApiError('Network error: ${e.message}');
     } catch (e) {
       return ApiError('Unexpected error: $e');
     }
+  }
+
+  /// Fetches a paginated list of tickers (for browsing stocks)
+  Future<ApiResult<List<Map<String, dynamic>>>> fetchTickers({
+    int offset = 0,
+    int limit = 10,
+  }) async {
+    final cacheKey = 'tickers_${offset}_$limit';
+
+    // Check persistent cache first
+    final cached = ApiCacheService.get<List<dynamic>>(cacheKey);
+    if (cached != null) {
+      return ApiSuccess(cached.cast<Map<String, dynamic>>());
+    }
+
+    try {
+      final response = await _dio.get(
+        '/tickers',
+        queryParameters: {
+          'access_key': AppConstants.marketstackApiKey,
+          'limit': limit,
+          'offset': offset,
+        },
+      );
+
+      final data = response.data;
+
+      if (data is Map<String, dynamic> && data.containsKey('error')) {
+        final error = data['error'];
+        return ApiError('API error: ${error['message'] ?? 'Unknown error'}');
+      }
+
+      final tickers = (data['data'] as List<dynamic>?)
+              ?.cast<Map<String, dynamic>>() ??
+          [];
+
+      // Persist ticker pages (1 hour TTL)
+      await ApiCacheService.put(cacheKey, tickers, ttl: const Duration(hours: 1));
+
+      return ApiSuccess(tickers);
+    } on DioException catch (e) {
+      return ApiError('Network error: ${e.message}');
+    } catch (e) {
+      return ApiError('Unexpected error: $e');
+    }
+  }
+
+  /// Clears both in-memory and persistent caches
+  Future<void> clearCache() async {
+    _quoteCache.clear();
+    await ApiCacheService.clearAll();
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
-/// Helper functions for ESG rating display
+
 class EsgHelpers {
   EsgHelpers._();
 

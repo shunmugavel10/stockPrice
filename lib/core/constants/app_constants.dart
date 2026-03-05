@@ -1,13 +1,12 @@
-/// Application-wide constants for GreenInvest
 class AppConstants {
   AppConstants._();
 
   static const String appName = 'GreenInvest';
   static const String appTagline = 'Sustainable Stock Portfolio Tracker';
 
-  // API
-  static const String globalQuoteFunction = 'GLOBAL_QUOTE';
-  static const String symbolSearchFunction = 'SYMBOL_SEARCH';
+  // Marketstack API
+  static const String marketstackBaseUrl = 'http://api.marketstack.com/v1';
+  static const String marketstackApiKey = '483e55cd1c5ed6435d1a7453b92cb5b9';
 
   // Hive Box Names
   static const String portfolioBox = 'portfolio_box';
@@ -21,8 +20,8 @@ class AppConstants {
     'AAA', 'AA', 'A', 'BBB', 'BB', 'B', 'CCC',
   ];
 
-  // Rate Limit
-  static const int apiCallIntervalMs = 12500; // Alpha Vantage free: 5 calls/min
+  // Rate Limit & Caching
+  static const int cacheDurationSeconds = 60;
   static const int maxRetries = 3;
   static const Duration retryDelay = Duration(seconds: 15);
 }

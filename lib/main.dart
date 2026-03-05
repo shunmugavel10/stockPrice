@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'core/constants/app_constants.dart';
 import 'core/navigation/app_router.dart';
+import 'core/network/api_cache_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/cupertino_theme.dart';
 import 'core/utils/platform_adaptive.dart';
@@ -15,16 +15,12 @@ import 'features/portfolio/presentation/providers/portfolio_providers.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables
-  await dotenv.load(fileName: '.env');
-
-  // Initialize Hive
   await Hive.initFlutter();
   Hive.registerAdapter(StockHoldingAdapter());
 
-  // Open Hive boxes
   final portfolioBox = await Hive.openBox<StockHolding>(AppConstants.portfolioBox);
   await Hive.openBox(AppConstants.settingsBox);
+  await ApiCacheService.init();
 
   runApp(
     ProviderScope(
@@ -36,15 +32,13 @@ Future<void> main() async {
   );
 }
 
-/// Root application widget for GreenInvest — adaptive for iOS (Cupertino) and Android (Material)
+/// adaptive UI for iOS (Cupertino) and Android (Material)
 class GreenInvestApp extends ConsumerWidget {
   const GreenInvestApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
-
-    // On iOS/macOS wrap with CupertinoTheme so Cupertino widgets pick up our palette
     if (isCupertino) {
       final brightness = themeMode == ThemeMode.dark
           ? Brightness.dark

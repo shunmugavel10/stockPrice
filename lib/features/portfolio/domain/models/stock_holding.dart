@@ -2,7 +2,7 @@ import 'package:hive/hive.dart';
 
 part 'stock_holding.g.dart';
 
-/// Represents a stock holding in the user's portfolio, persisted via Hive
+/// Represents a stock holding in the users portfolio, persisted via Hive
 @HiveType(typeId: 0)
 class StockHolding extends HiveObject {
   @HiveField(0)

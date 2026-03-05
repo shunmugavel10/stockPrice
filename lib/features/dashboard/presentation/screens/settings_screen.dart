@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/network/api_cache_service.dart';
 import '../../../../core/utils/extensions.dart';
 import '../../../../core/utils/platform_adaptive.dart';
 import '../../../../core/utils/responsive.dart';
@@ -69,6 +70,9 @@ class SettingsScreen extends ConsumerWidget {
                 _buildSectionTitle(context, 'Appearance'),
                 _buildThemeCard(context, ref, themeMode),
                 const SizedBox(height: 16),
+                _buildSectionTitle(context, 'Data & Cache'),
+                _buildCacheCard(context),
+                const SizedBox(height: 16),
                 _buildSectionTitle(context, 'About'),
                 _buildAboutCard(context),
               ],
@@ -87,7 +91,6 @@ class SettingsScreen extends ConsumerWidget {
     return GlassmorphismCard(
       child: Column(
         children: [
-          // Avatar + Name + Email header
           Row(
             children: [
               Container(
@@ -170,7 +173,7 @@ class SettingsScreen extends ConsumerWidget {
             icon: isCupertino
                 ? CupertinoIcons.arrow_right_arrow_left
                 : Icons.swap_horiz_rounded,
-            label: 'Routing',
+            label: 'IFSC',
             value: '021000021',
           ),
           const SizedBox(height: 12),
@@ -222,6 +225,89 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => ref
                 .read(themeModeProvider.notifier)
                 .setThemeMode(ThemeMode.dark),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCacheCard(BuildContext context) {
+    return GlassmorphismCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isCupertino
+                    ? CupertinoIcons.arrow_clockwise
+                    : Icons.cached_rounded,
+                size: 20,
+                color: context.isDarkMode
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'API Response Cache',
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Cached data loads instantly without API calls. '
+                      'Clear to fetch fresh data.',
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: context.isDarkMode
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                await ApiCacheService.clearAll();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Cache cleared successfully'),
+                      backgroundColor: AppColors.primary,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+              icon: Icon(
+                isCupertino
+                    ? CupertinoIcons.trash
+                    : Icons.delete_outline_rounded,
+                size: 18,
+              ),
+              label: const Text('Clear Cache'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.error,
+                side: BorderSide(
+                  color: AppColors.error.withValues(alpha: 0.4),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
           ),
         ],
       ),

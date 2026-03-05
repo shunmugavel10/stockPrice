@@ -3,9 +3,8 @@ import '../../domain/models/esg_data.dart';
 import '../../domain/repositories/esg_repository.dart';
 
 /// Mock ESG service that simulates ESG data.
-/// Structured so it can be replaced by OpenESG, ClimateWatch, or ESG Enterprise.
 class MockEsgService implements EsgRepository {
-  // Deterministic mock data per symbol for consistency
+  // mock data per symbol for consistency
   static final Map<String, EsgData> _mockData = {
     'AAPL': const EsgData(symbol: 'AAPL', esgScore: 78, co2Emission: 22.1, sustainabilityRating: 'AA'),
     'MSFT': const EsgData(symbol: 'MSFT', esgScore: 85, co2Emission: 11.3, sustainabilityRating: 'AAA'),
@@ -31,7 +30,6 @@ class MockEsgService implements EsgRepository {
       return _mockData[upper]!;
     }
 
-    // Generate pseudo-random but deterministic data for unknown symbols
     final seed = upper.codeUnits.fold<int>(0, (a, b) => a + b);
     final rng = Random(seed);
     final score = 20 + rng.nextDouble() * 80;

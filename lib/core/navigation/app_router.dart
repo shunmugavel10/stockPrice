@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/dashboard/presentation/screens/settings_screen.dart';
 import '../../features/portfolio/presentation/screens/portfolio_screen.dart';
+import '../../features/portfolio/presentation/screens/stock_detail_screen.dart';
 import '../../features/stock_search/presentation/screens/stock_search_screen.dart';
 import 'shell_scaffold.dart';
 
@@ -46,6 +47,17 @@ class AppRouter {
             ),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/stock-detail',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, String>? ?? {};
+          return StockDetailScreen(
+            symbol: extra['symbol'] ?? '',
+            name: extra['name'] ?? '',
+          );
+        },
       ),
     ],
   );

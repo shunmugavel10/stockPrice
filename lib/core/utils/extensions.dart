@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'responsive.dart';
 
-/// Numeric formatting extensions
+/// Numerical data formatting extensions
 extension NumFormatting on num {
-  /// Formats as currency: $1,234.56
+  /// Formats as currency (ex: $10.12 ) 
   String toCurrency() {
     final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
     return formatter.format(this);
@@ -26,7 +26,7 @@ extension NumFormatting on num {
 
 /// String helpers
 extension StringX on String {
-  /// Capitalizes first letter
+  /// Capitalizes first letter 
   String capitalize() {
     if (isEmpty) return this;
     return '${this[0].toUpperCase()}${substring(1)}';
@@ -41,7 +41,7 @@ extension ContextX on BuildContext {
   Size get screenSize => MediaQuery.sizeOf(this);
   bool get isDarkMode => Theme.of(this).brightness == Brightness.dark;
 
-  // Responsive helpers
+  // Responsive extentions
   bool get isMobile => Responsive.isMobile(this);
   bool get isTablet => Responsive.isTablet(this);
   bool get isDesktop => Responsive.isDesktop(this);
@@ -51,6 +51,6 @@ extension ContextX on BuildContext {
   int get gridColumns => Responsive.gridColumns(this);
   double get chartHeight => Responsive.chartHeight(this);
 
-  /// Cupertino theme data (safe fallback)
+  /// Cupertino theme data
   CupertinoThemeData get cupertinoTheme => CupertinoTheme.of(this);
 }

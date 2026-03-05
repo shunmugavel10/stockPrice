@@ -27,6 +27,7 @@ class DashboardScreen extends ConsumerWidget {
     final hPad = context.horizontalPadding;
 
     return Scaffold(
+      // Dashboard screen appbar 
       appBar: AppBar(
         title: Row(
           children: [
@@ -41,6 +42,7 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ],
         ),
+        // IconButton to switch dark to light theme.
         actions: [
           IconButton(
             icon: Icon(
@@ -56,13 +58,16 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
+
       body: summaryAsync.when(
+        // shimmer effect used while data loading
         loading: () => const ShimmerDashboard(),
         error: (err, _) => ErrorScreen(
           message: err.toString(),
           onRetry: () => ref.invalidate(portfolioSummaryProvider),
         ),
         data: (summary) {
+          // if empty data screen displays this content
           if (summary.holdings.isEmpty) {
             return EmptyStateWidget(
               icon: Icons.trending_up_rounded,
@@ -75,6 +80,7 @@ class DashboardScreen extends ConsumerWidget {
           }
 
           final content = ResponsiveContent(
+            
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -407,7 +413,12 @@ class DashboardScreen extends ConsumerWidget {
 
   Widget _buildHoldingTile(BuildContext context, EnrichedHolding h) {
     final isProfit = h.profitLoss >= 0;
-    return GlassmorphismCard(
+    return GestureDetector(
+      onTap: () => context.push('/stock-detail', extra: {
+        'symbol': h.holding.symbol,
+        'name': h.holding.name,
+      }),
+      child: GlassmorphismCard(
       child: Row(
         children: [
           // Symbol circle
@@ -517,6 +528,7 @@ class DashboardScreen extends ConsumerWidget {
             ],
           ),
         ],
+      ),
       ),
     );
   }

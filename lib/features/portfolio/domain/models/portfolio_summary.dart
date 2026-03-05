@@ -49,7 +49,7 @@ class PortfolioSummary {
     holdings: [],
   );
 
-  /// Calculates weighted ESG score: Σ(stockValue * esgScore) / totalPortfolioValue
+  /// Calculates weighted ESG score
   static PortfolioSummary fromHoldings(List<EnrichedHolding> holdings) {
     if (holdings.isEmpty) return empty;
 

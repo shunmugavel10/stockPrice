@@ -1,4 +1,4 @@
-/// Parsed Alpha Vantage GLOBAL_QUOTE response
+/// Parsed stock quote — supports Marketstack EOD response
 class StockQuote {
   final String symbol;
   final double open;
@@ -24,19 +24,32 @@ class StockQuote {
     required this.changePercent,
   });
 
-  factory StockQuote.fromJson(Map<String, dynamic> json) {
-    final quote = json['Global Quote'] as Map<String, dynamic>? ?? {};
+  /// Parse a single Marketstack EOD data entry
+  factory StockQuote.fromMarketstack(Map<String, dynamic> eod) {
+    final close = (eod['close'] as num?)?.toDouble() ?? 0.0;
+    final open = (eod['open'] as num?)?.toDouble() ?? 0.0;
+    final high = (eod['high'] as num?)?.toDouble() ?? 0.0;
+    final low = (eod['low'] as num?)?.toDouble() ?? 0.0;
+    final volume = (eod['volume'] as num?)?.toInt() ?? 0;
+    final symbol = (eod['symbol'] as String?) ?? '';
+    final date = (eod['date'] as String?) ?? '';
+    final tradingDay = date.length >= 10 ? date.substring(0, 10) : date;
+
+    final change = close - open;
+    final changePercent =
+        open != 0 ? '${(change / open * 100).toStringAsFixed(2)}%' : '0%';
+
     return StockQuote(
-      symbol: quote['01. symbol'] ?? '',
-      open: double.tryParse(quote['02. open'] ?? '') ?? 0.0,
-      high: double.tryParse(quote['03. high'] ?? '') ?? 0.0,
-      low: double.tryParse(quote['04. low'] ?? '') ?? 0.0,
-      price: double.tryParse(quote['05. price'] ?? '') ?? 0.0,
-      volume: int.tryParse(quote['06. volume'] ?? '') ?? 0,
-      latestTradingDay: quote['07. latest trading day'] ?? '',
-      previousClose: double.tryParse(quote['08. previous close'] ?? '') ?? 0.0,
-      change: double.tryParse(quote['09. change'] ?? '') ?? 0.0,
-      changePercent: quote['10. change percent'] ?? '0%',
+      symbol: symbol,
+      open: open,
+      high: high,
+      low: low,
+      price: close,
+      volume: volume,
+      latestTradingDay: tradingDay,
+      previousClose: open,
+      change: change,
+      changePercent: changePercent,
     );
   }
 

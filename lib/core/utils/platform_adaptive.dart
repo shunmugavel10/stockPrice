@@ -2,12 +2,12 @@ import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-/// Helper to determine if the current platform is iOS/macOS (Cupertino)
+/// to determine if the current platform is iOS/macOS (Cupertino)
 bool get isCupertino {
   try {
     return Platform.isIOS || Platform.isMacOS;
   } catch (_) {
-    // Web or unsupported — default to Material
+    // Web or unsupported device — default to Material
     return false;
   }
 }
@@ -153,7 +153,7 @@ class AdaptiveTextField extends StatelessWidget {
   }
 }
 
-/// Show an adaptive dialog (CupertinoAlertDialog on iOS, AlertDialog on Android)
+/// Show an adaptive dialog CupertinoAlertDialog on iOS, AlertDialog on Android
 Future<T?> showAdaptiveConfirmDialog<T>({
   required BuildContext context,
   required String title,
@@ -205,7 +205,7 @@ Future<T?> showAdaptiveConfirmDialog<T>({
   );
 }
 
-/// Show an adaptive bottom sheet (CupertinoActionSheet style on iOS)
+/// Show an adaptive bottom sheet CupertinoActionSheet style on iOS
 Future<void> showAdaptiveBottomSheet({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -250,7 +250,7 @@ class AdaptiveProgressIndicator extends StatelessWidget {
   }
 }
 
-/// Adaptive refresh control — returns appropriate sliver for pull-to-refresh
+/// Adaptive refresh control returns appropriate sliver for pull-to-refresh
 class AdaptiveRefreshControl extends StatelessWidget {
   final Future<void> Function() onRefresh;
   final Widget child;
